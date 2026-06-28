@@ -1,0 +1,102 @@
+export type TechOption = { id: string; name: string; blurb: string; tag?: string; rec?: boolean };
+export type TechCategory = { label: string; opts: TechOption[] };
+
+export const TECH_CATALOG: Record<string, TechCategory> = {
+  frontend: { label: "Frontend Framework", opts: [
+    { id: "react", name: "React 19", blurb: "Universal component base", rec: true, tag: "stable" },
+    { id: "nextjs-14", name: "Next.js 14 App Router", blurb: "Fullstack React, RSC", rec: true, tag: "recommended" },
+    { id: "remix", name: "Remix", blurb: "Nested routes, web-std", tag: "fast" },
+    { id: "sveltekit", name: "SvelteKit", blurb: "Compiler-light runtime" },
+    { id: "astro", name: "Astro", blurb: "Islands, content sites" },
+    { id: "vue", name: "Vue 3 + Vite", blurb: "Elegant DX" },
+  ]},
+  styling: { label: "UI & Styling", opts: [
+    { id: "tailwind", name: "Tailwind CSS", blurb: "Utility-first velocity", rec: true },
+    { id: "shadcn", name: "shadcn/ui", blurb: "Radix + Tailwind primitives", rec: true },
+    { id: "radix", name: "Radix UI", blurb: "Accessible headless" },
+    { id: "mui", name: "MUI", blurb: "Material system" },
+    { id: "chakra", name: "Chakra UI", blurb: "Themeable, fast" },
+    { id: "vanilla-extract", name: "vanilla-extract", blurb: "Zero runtime TS CSS" },
+  ]},
+  animation: { label: "Animation & Motion", opts: [
+    { id: "framer-motion", name: "Framer Motion", blurb: "Spring physics, layout animations", rec: true, tag: "liquid glass hero" },
+    { id: "motion-one", name: "Motion One", blurb: "Tiny WA API" },
+    { id: "react-spring", name: "React Spring", blurb: "Physics-based" },
+    { id: "gsap", name: "GSAP", blurb: "Tight timeline control" },
+    { id: "auto-animate", name: "AutoAnimate", blurb: "Drop-in list magic" },
+  ]},
+  icons: { label: "Icons / Visual", opts: [
+    { id: "lucide", name: "lucide-react", blurb: "Sharp, 1300+ icons", rec: true },
+    { id: "heroicons", name: "Heroicons", blurb: "Tailwind friendly" },
+    { id: "phosphor", name: "Phosphor", blurb: "Flexible weights" },
+    { id: "unpic", name: "unpic", blurb: "Responsive images" },
+    { id: "ogl", name: "OGL / three", blurb: "WebGL spice", tag: "nebula" },
+  ]},
+  state: { label: "State / Data", opts: [
+    { id: "tanstack-query", name: "TanStack Query", blurb: "Server cache master", rec: true },
+    { id: "zustand", name: "Zustand", blurb: "Tiny global store", rec: true },
+    { id: "jotai", name: "Jotai", blurb: "Atomic, scalable" },
+    { id: "redux", name: "Redux Toolkit", blurb: "Mature ecosystem" },
+    { id: "valtio", name: "Valtio", blurb: "Proxy magic" },
+  ]},
+  backend: { label: "Backend / API", opts: [
+    { id: "nextjs-app-router", name: "Next.js Route Handlers", blurb: "Edge + Node, RSC ready", rec: true },
+    { id: "trpc", name: "tRPC", blurb: "E2E typesafe", rec: true, tag: "DX" },
+    { id: "hono", name: "Hono", blurb: "Edge ultra-fast" },
+    { id: "express", name: "Express", blurb: "Classic" },
+    { id: "fastify", name: "Fastify", blurb: "Perf JSON API" },
+    { id: "nestjs", name: "NestJS", blurb: "Structured enterprise" },
+  ]},
+  database: { label: "Database", opts: [
+    { id: "postgres", name: "Postgres", blurb: "Rock-solid relational", rec: true },
+    { id: "prisma", name: "Prisma ORM", blurb: "Type-safe DB", rec: true },
+    { id: "supabase", name: "Supabase", blurb: "Auth + realtime + storage", rec: true, tag: "all-in-one" },
+    { id: "neondb", name: "Neon", blurb: "Serverless Postgres", tag: "branchable" },
+    { id: "turso", name: "Turso", blurb: "Edge libSQL" },
+    { id: "drizzle", name: "Drizzle ORM", blurb: "Light, SQL-ish" },
+    { id: "mongodb", name: "MongoDB Atlas", blurb: "Doc flexible" },
+    { id: "planetscale", name: "PlanetScale", blurb: "Serverless MySQL" },
+  ]},
+  auth: { label: "Auth", opts: [
+    { id: "authjs", name: "Auth.js", blurb: "NextAuth v5", rec: true },
+    { id: "supabase-auth", name: "Supabase Auth", blurb: "Magic link / OAuth" },
+    { id: "clerk", name: "Clerk", blurb: "Drop-in hosted UI", tag: "fastest" },
+    { id: "lucia", name: "Lucia", blurb: "Bare-metal sessions" },
+    { id: "workos", name: "WorkOS", blurb: "SAML / Teams" },
+  ]},
+  realtime: { label: "Realtime", opts: [
+    { id: "supabase-realtime", name: "Supabase Realtime", blurb: "Postgres changes" },
+    { id: "pusher", name: "Pusher", blurb: "SaaS websockets" },
+    { id: "ably", name: "Ably", blurb: "Global pubsub" },
+    { id: "partykit", name: "PartyKit", blurb: "Edge collaborative" },
+  ]},
+  payments: { label: "Payments", opts: [
+    { id: "stripe", name: "Stripe", blurb: "Subscriptions + webhooks", rec: true },
+    { id: "lemonsqueezy", name: "LemonSqueezy", blurb: "MoR simple" },
+    { id: "paddle", name: "Paddle", blurb: "Global tax" },
+  ]},
+  ai: { label: "AI Layer", opts: [
+    { id: "vercel-ai-sdk", name: "Vercel AI SDK", blurb: "Streaming UI primitives", rec: true },
+    { id: "openai", name: "OpenAI", blurb: "GPT-4o models" },
+    { id: "anthropic", name: "Anthropic Claude", blurb: "Long context" },
+    { id: "langchain", name: "LangChain", blurb: "Agent orchestration" },
+    { id: "embeddings", name: "pgvector", blurb: "Vector search in PG" },
+  ]},
+  storage: { label: "Storage / CDN", opts: [
+    { id: "vercel-blob", name: "Vercel Blob", blurb: "Zero config" },
+    { id: "s3", name: "S3 / R2", blurb: "Cloudflare R2 cheap" },
+    { id: "uploadthing", name: "UploadThing", blurb: "Type-safe uploads" },
+  ]},
+  analytics: { label: "Analytics / Obs", opts: [
+    { id: "posthog", name: "PostHog", blurb: "Product + session replay", rec: true },
+    { id: "vercel-analytics", name: "Vercel Analytics", blurb: "Web vitals" },
+    { id: "sentry", name: "Sentry", blurb: "Errors" },
+    { id: "mixpanel", name: "Mixpanel", blurb: "Event funnels" },
+  ]},
+  testing: { label: "Testing", opts: [
+    { id: "vitest", name: "Vitest", blurb: "Fast unit", rec: true },
+    { id: "playwright", name: "Playwright", blurb: "E2E", rec: true },
+    { id: "cypress", name: "Cypress", blurb: "E2E friendly" },
+    { id: "rtl", name: "Testing Library", blurb: "Component" },
+  ]},
+};
