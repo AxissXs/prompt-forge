@@ -15,7 +15,7 @@ export default async function handler(req: Request): Promise<Response> {
 
   if (action === "register") {
     const { email, username, password, recaptchaToken } = body;
-    if (!(await verifyRecaptcha(recaptchaToken))) return json({ error: "reCAPTCHA failed" }, 400);
+    if (!(await verifyRecaptcha(recaptchaToken, "register"))) return json({ error: "reCAPTCHA failed" }, 400);
     if (!email || !username || !password) return json({ error: "missing fields" }, 400);
     const existing = await sql`select 1 from users where email = ${email} or username = ${username} limit 1`;
     if (existing.length) return json({ error: "email or username already taken" }, 409);
@@ -31,7 +31,7 @@ export default async function handler(req: Request): Promise<Response> {
 
   if (action === "login") {
     const { email, password, recaptchaToken } = body;
-    if (!(await verifyRecaptcha(recaptchaToken))) return json({ error: "reCAPTCHA failed" }, 400);
+    if (!(await verifyRecaptcha(recaptchaToken, "login"))) return json({ error: "reCAPTCHA failed" }, 400);
     const rows = await sql`select * from users where email = ${email} limit 1`;
     const u = rows[0];
     if (!u || !verifyPassword(password, u.password_hash)) return json({ error: "invalid credentials" }, 401);

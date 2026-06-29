@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
-import { Recaptcha } from "./Recaptcha";
+import { executeRecaptcha } from "../../services/recaptcha";
 
 export function AuthModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { register, login } = useAuth();
@@ -9,11 +9,10 @@ export function AuthModal({ open, onClose }: { open: boolean; onClose: () => voi
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [captcha, setCaptcha] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
-  const reset = () => { setError(""); setPassword(""); setCaptcha(null); };
+  const reset = () => { setError(""); setPassword(""); };
 
   const [step, setStep] = useState<"auth" | "merge">("auth");
   const [sessionToken, setSessionToken] = useState<string | null>(null);
@@ -33,13 +32,14 @@ export function AuthModal({ open, onClose }: { open: boolean; onClose: () => voi
   const submit = async () => {
     setError(""); setBusy(true);
     try {
-      if (!captcha) throw new Error("Please complete the reCAPTCHA");
+      const action = mode === "register" ? "register" : "login";
+      const token = await executeRecaptcha(action);
       
       // Perform authentication
       if (mode === "register") {
-        await register(email.trim(), username.trim(), password, captcha);
+        await register(email.trim(), username.trim(), password, token);
       } else {
-        await login(email.trim(), password, captcha);
+        await login(email.trim(), password, token);
       }
       
       // Check for local storage data to merge
@@ -130,10 +130,8 @@ export function AuthModal({ open, onClose }: { open: boolean; onClose: () => voi
                       )}
                     </AnimatePresence>
                     <input value={password} onChange={(e) => setPassword(e.target.value)} type="password" placeholder="Password"
-                      onKeyDown={(e) => { if (e.key === "Enter" && captcha) submit(); }}
+                      onKeyDown={(e) => { if (e.key === "Enter") submit(); }}
                       className="w-full rounded-[12px] glass-soft px-4 py-[11px] text-[14px] outline-none text-[#eaf2ff] placeholder-[#8d9ec3] focus:ring-sky" />
-
-                    <Recaptcha onChange={setCaptcha} />
 
                     {error && <div className="text-[12.5px] text-[#ff9ba0] bg-red-500/10 rounded-[10px] px-3 py-2">{error}</div>}
 

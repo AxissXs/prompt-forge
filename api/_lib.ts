@@ -3,7 +3,7 @@
 // Uses Neon's serverless driver over HTTP — works in edge & node runtimes.
 // Required env vars:
 //   DATABASE_URL          — Neon connection string
-//   RECAPTCHA_SECRET_KEY  — Google reCAPTCHA v2 secret
+//   RECAPTCHA_SECRET_KEY  — Google reCAPTCHA v3 secret
 // ===========================================================================
 import { neon } from "@neondatabase/serverless";
 import { randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
@@ -28,8 +28,8 @@ export function newToken(): string {
   return randomBytes(32).toString("base64url");
 }
 
-// ── Google reCAPTCHA v2 verification ──
-export async function verifyRecaptcha(token: string): Promise<boolean> {
+// ── Google reCAPTCHA v3 verification ──
+export async function verifyRecaptcha(token: string, expectedAction?: string): Promise<boolean> {
   if (!token) return false;
   const res = await fetch("https://www.google.com/recaptcha/api/siteverify", {
     method: "POST",
@@ -39,8 +39,17 @@ export async function verifyRecaptcha(token: string): Promise<boolean> {
       response: token,
     }),
   });
-  const data = (await res.json()) as { success: boolean };
-  return data.success === true;
+  const data = (await res.json()) as {
+    success: boolean;
+    score?: number;
+    action?: string;
+    "error-codes"?: string[];
+  };
+  if (!data.success) return false;
+  // For v3, verify score (threshold 0.5) and action
+  if (data.score !== undefined && data.score < 0.5) return false;
+  if (expectedAction && data.action !== expectedAction) return false;
+  return true;
 }
 
 // ── Resolve a bearer token → user ──

@@ -1,4 +1,4 @@
-// Google reCAPTCHA v2 (checkbox) loader.
+// Google reCAPTCHA v3 (invisible) loader.
 // Uses Google's official TEST site key by default (always passes) so the
 // widget renders & works in the demo. Set VITE_RECAPTCHA_SITE_KEY for prod.
 export const RECAPTCHA_SITE_KEY =
@@ -13,7 +13,7 @@ export function loadRecaptcha(): Promise<void> {
   if (loadPromise) return loadPromise;
   loadPromise = new Promise<void>((resolve, reject) => {
     const s = document.createElement("script");
-    s.src = "https://www.google.com/recaptcha/api.js?render=explicit";
+    s.src = `https://www.google.com/recaptcha/api.js?render=${RECAPTCHA_SITE_KEY}`;
     s.async = true;
     s.defer = true;
     s.onload = () => resolve();
@@ -23,21 +23,9 @@ export function loadRecaptcha(): Promise<void> {
   return loadPromise;
 }
 
-export function renderRecaptcha(
-  el: HTMLElement,
-  onChange: (token: string | null) => void,
-): number | null {
+export async function executeRecaptcha(action: string): Promise<string> {
+  await loadRecaptcha();
   const g = (window as any).grecaptcha;
-  if (!g || !g.render) return null;
-  return g.render(el, {
-    sitekey: RECAPTCHA_SITE_KEY,
-    theme: "dark",
-    callback: (token: string) => onChange(token),
-    "expired-callback": () => onChange(null),
-  });
-}
-
-export function resetRecaptcha(widgetId: number | null) {
-  const g = (window as any).grecaptcha;
-  if (g && widgetId !== null) g.reset(widgetId);
+  if (!g || !g.execute) throw new Error("reCAPTCHA not loaded");
+  return g.execute(RECAPTCHA_SITE_KEY, { action });
 }
