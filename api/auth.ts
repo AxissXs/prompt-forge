@@ -12,7 +12,7 @@ import {
 
 // Uses default Vercel Node.js Serverless runtime (not edge) for full crypto compatibility
 
-export default async function handler(req: Request): Promise<Response> {
+export async function fetch(req: Request): Promise<Response> {
   if (req.method === "GET") {
     const user = await getUserFromToken(
       req.headers.get("authorization") ?? undefined,

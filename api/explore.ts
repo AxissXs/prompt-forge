@@ -4,7 +4,7 @@ import { sql, getUserFromToken, json, getBody } from "./_lib.js";
 
 // Uses default Vercel Node.js Serverless runtime (not edge) for full crypto compatibility
 
-export default async function handler(req: Request): Promise<Response> {
+export async function fetch(req: Request): Promise<Response> {
   const url = new URL(req.url);
 
   if (req.method === "GET") {
