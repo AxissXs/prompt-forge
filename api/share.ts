@@ -1,6 +1,6 @@
 // POST /api/share  { ideaId }            → create private share link
 // GET  /api/share?token=...               → resolve a shared idea
-import { sql, getUserFromToken, newToken, json } from "./_lib.ts";
+import { sql, getUserFromToken, newToken, json } from "./_lib.js";
 
 // Uses default Vercel Node.js Serverless runtime (not edge) for full crypto compatibility
 

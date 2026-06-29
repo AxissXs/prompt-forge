@@ -1,6 +1,6 @@
 // GET  /api/explore?kind=templates|ideas      → public listings
 // POST /api/explore  { action, ... }           → publish/unpublish/like
-import { sql, getUserFromToken, json } from "./_lib.ts";
+import { sql, getUserFromToken, json } from "./_lib.js";
 
 // Uses default Vercel Node.js Serverless runtime (not edge) for full crypto compatibility
 

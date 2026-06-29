@@ -7,7 +7,7 @@ import {
   verifyRecaptcha,
   getUserFromToken,
   json,
-} from "./_lib.ts";
+} from "./_lib.js";
 
 // Uses default Vercel Node.js Serverless runtime (not edge) for full crypto compatibility
 
