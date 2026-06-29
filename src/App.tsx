@@ -23,6 +23,8 @@ import { Explore } from "./components/Explore";
 import { AuthModal } from "./components/auth/AuthModal";
 import { ShareDialog } from "./components/ShareDialog";
 import { SharedView } from "./components/SharedView";
+import { ProfileEditor } from "./components/ProfileEditor";
+import { ProfilePage } from "./components/ProfilePage";
 import { useAuth } from "./context/AuthContext";
 import { localPublishIdea, localUnpublishIdea, localIsIdeaPublic } from "./services/backend";
 import type { PublicTemplate, PublicIdea } from "./types";
@@ -44,9 +46,11 @@ function builtInTemplates(): PromptTemplate[] {
 type View = "builder" | "studio" | "explore";
 
 export default function App() {
-  const { user, logout } = useAuth();
+  const { user, token, logout } = useAuth();
   const [view, setView] = useState<View>("builder");
   const [authOpen, setAuthOpen] = useState(false);
+  const [profileEditorOpen, setProfileEditorOpen] = useState(false);
+  const [profileUsername, setProfileUsername] = useState<string | null>(null);
   const [shareSession, setShareSession] = useState<Session | null>(null);
   const [sharedToken, setSharedToken] = useState<string | null>(null);
   const [sessions, setSessions] = useLocalStorage<Session[]>("promptforge_sessions_v3", []);
@@ -186,6 +190,7 @@ export default function App() {
     setView("studio");
   };
   const usePublicIdea = (i: PublicIdea) => cloneIdea(i.projectName || i.name, i.data);
+  const viewProfile = (username: string) => setProfileUsername(username);
 
   // ─── idea public toggle (builder quick action) ───
   const activeSession = sessions.find((s) => s.id === activeId) || null;
@@ -350,6 +355,23 @@ export default function App() {
 
   const TYPE_LABELS: Record<string, string> = { webapp: "Web App", saas: "SaaS", mobile: "Mobile", api: "API", extension: "Extension", "ai-agent": "AI Agent" };
 
+  // Profile view
+  if (profileUsername) {
+    return (
+      <>
+        <div className="relative min-h-screen text-[#e8f0ff]">
+          <div className="mesh-bg" />
+          <div className="relative z-10 max-w-[1380px] mx-auto px-5 md:px-9 py-7">
+            <ProfilePage username={profileUsername} onBack={() => setProfileUsername(null)} />
+            <footer className="text-center text-[11px] text-[#7288b1] mt-10 mb-6 mono">
+              liquid-glass • neumorphic toggles • framework-aware fields • local persistence • NeonDB + reCAPTCHA ready
+            </footer>
+          </div>
+        </div>
+      </>
+    );
+  }
+
   // Shared private link view takes over the whole screen
   if (sharedToken) {
     return <SharedView token={sharedToken} onClose={closeShared} onClone={cloneIdea} />;
@@ -398,9 +420,17 @@ export default function App() {
             <button onClick={newSession} className="px-4 py-[10px] rounded-full bg-[#defffe] text-[#082026] text-[13px] font-[600] shadow-[0_8px_30px_rgba(150,255,255,.18)] hover:translate-y-[-1px] transition">New idea</button>
             {user ? (
               <div className="flex items-center gap-2 pl-1">
-                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#b7deff] to-[#ffb8f2] flex items-center justify-center text-[#0d2436] text-[13px] font-[700]" title={user.username}>
-                  {user.username.slice(0, 1).toUpperCase()}
-                </div>
+                <button onClick={() => setProfileEditorOpen(true)} className="group relative">
+                  {user.avatarUrl ? (
+                    <img src={user.avatarUrl} alt="" className="w-9 h-9 rounded-full object-cover border border-white/[.15]"
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                  ) : (
+                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#b7deff] to-[#ffb8f2] flex items-center justify-center text-[#0d2436] text-[13px] font-[700]" title={user.username}>
+                      {(user.displayName || user.username).slice(0, 1).toUpperCase()}
+                    </div>
+                  )}
+                </button>
+                <button onClick={() => setProfileUsername(user.username)} className="px-3 py-[9px] rounded-full glass-soft text-[12px] hover:bg-white/[.06] transition">Profile</button>
                 <button onClick={logout} className="px-3 py-[9px] rounded-full glass-soft text-[12px] hover:bg-white/[.06] transition">Sign out</button>
               </div>
             ) : (
@@ -502,7 +532,7 @@ export default function App() {
             </motion.div>
           ) : (
             <motion.div key="explore" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} transition={{ duration: 0.25 }}>
-              <Explore onUseTemplate={usePublicTemplate} onUseIdea={usePublicIdea} />
+              <Explore onUseTemplate={usePublicTemplate} onUseIdea={usePublicIdea} onViewProfile={viewProfile} />
             </motion.div>
           )}
         </AnimatePresence>
@@ -514,7 +544,8 @@ export default function App() {
 
       {/* Modals */}
       <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} />
-      <ShareDialog open={!!shareSession} onClose={() => setShareSession(null)} session={shareSession} user={user!} />
+      <ShareDialog open={!!shareSession} onClose={() => setShareSession(null)} session={shareSession} user={user!} token={token!} />
+      <ProfileEditor open={profileEditorOpen} onClose={() => setProfileEditorOpen(false)} />
     </div>
   );
 }

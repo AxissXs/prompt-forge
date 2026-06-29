@@ -9,6 +9,7 @@ type AuthCtx = {
   register: (email: string, username: string, password: string, recaptchaToken: string) => Promise<void>;
   login: (email: string, password: string, recaptchaToken: string) => Promise<void>;
   logout: () => void;
+  refreshUser: () => void;
 };
 
 const Ctx = createContext<AuthCtx | null>(null);
@@ -24,6 +25,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (raw) setSession(JSON.parse(raw));
     } catch { /* ignore */ }
     setLoading(false);
+  }, []);
+
+  const refreshUser = useCallback(() => {
+    try {
+      const raw = localStorage.getItem(LS_KEY);
+      if (raw) setSession(JSON.parse(raw));
+    } catch { /* ignore */ }
   }, []);
 
   const persist = useCallback((s: AuthSession | null) => {
@@ -48,7 +56,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [session, persist]);
 
   return (
-    <Ctx.Provider value={{ user: session?.user ?? null, token: session?.token ?? null, loading, register, login, logout }}>
+    <Ctx.Provider value={{ user: session?.user ?? null, token: session?.token ?? null, loading, register, login, logout, refreshUser }}>
       {children}
     </Ctx.Provider>
   );

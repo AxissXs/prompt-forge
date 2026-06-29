@@ -166,11 +166,20 @@ export type PromptTemplate = {
   isPublic?: boolean;
 };
 
+export type SocialLink = {
+  platform: string;
+  url: string;
+};
+
 /* ─── Auth & social ─── */
 export type User = {
   id: string;
   email: string;
   username: string;
+  displayName?: string;
+  avatarUrl?: string;
+  websiteUrl?: string;
+  socialLinks?: SocialLink[];
   createdAt: number;
 };
 

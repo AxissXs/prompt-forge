@@ -65,6 +65,19 @@ const remote = {
     if (!r.ok) return null;
     return (await r.json()).item as { name: string; data: FormData; owner_name: string };
   },
+  async getUserProfile(username: string) {
+    const r = await fetch(`${API_BASE}/profile?username=${encodeURIComponent(username)}`);
+    if (!r.ok) return null;
+    return r.json() as Promise<{ id: string; username: string; displayName?: string; avatarUrl?: string; websiteUrl?: string; socialLinks?: { platform: string; url: string }[]; createdAt: number }>;
+  },
+  async updateProfile(token: string, data: { displayName?: string; avatarUrl?: string; websiteUrl?: string; socialLinks?: { platform: string; url: string }[] }) {
+    const r = await fetch(`${API_BASE}/profile`, {
+      method: "POST",
+      headers: { "content-type": "application/json", ...authHeaders(token) },
+      body: JSON.stringify(data),
+    });
+    if (!r.ok) throw new Error((await r.json()).error || "Profile update failed");
+  },
   async sync(token: string, sessions: any[], templates: any[]) {
     await fetch(`${API_BASE}/sync`, {
       method: "POST",
@@ -80,6 +93,7 @@ const LS = {
   shares: "pf_shares", likes: "pf_likes",
 };
 type StoredUser = User & { passwordHash: string };
+type PublicProfile = { id: string; username: string; displayName?: string; avatarUrl?: string; websiteUrl?: string; socialLinks?: { platform: string; url: string }[]; createdAt: number };
 const read = <T,>(k: string, d: T): T => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } };
 const write = (k: string, v: unknown) => localStorage.setItem(k, JSON.stringify(v));
 const hash = (s: string) => { let h = 0; for (let i = 0; i < s.length; i++) { h = (h << 5) - h + s.charCodeAt(i); h |= 0; } return String(h); };
@@ -151,6 +165,32 @@ const local = {
     const shares = read<Record<string, any>>(LS.shares, {});
     const item = shares[token] ?? null;
     return item ? sanitizeStrings(item) : null;
+  },
+  async getUserProfile(username: string): Promise<PublicProfile | null> {
+    await delay(120);
+    const users = read<StoredUser[]>(LS.users, []);
+    const u = users.find((x) => x.username === username);
+    if (!u) return null;
+    const { passwordHash: _, ...user } = u;
+    return user;
+  },
+  async updateProfile(_token: string, data: { displayName?: string; avatarUrl?: string; websiteUrl?: string; socialLinks?: { platform: string; url: string }[] }) {
+    await delay(150);
+    const session = JSON.parse(localStorage.getItem("pf_auth_session") || "null");
+    if (!session) throw new Error("Not logged in");
+    const users = read<StoredUser[]>(LS.users, []);
+    const idx = users.findIndex((u) => u.id === session.user.id);
+    if (idx < 0) throw new Error("User not found");
+    if (data.displayName !== undefined) users[idx].displayName = data.displayName;
+    if (data.avatarUrl !== undefined) users[idx].avatarUrl = data.avatarUrl;
+    if (data.websiteUrl !== undefined) users[idx].websiteUrl = data.websiteUrl;
+    if (data.socialLinks !== undefined) users[idx].socialLinks = data.socialLinks;
+    write(LS.users, users);
+    // Update the session in localStorage too
+    const updated = { ...users[idx] };
+    const { passwordHash: _, ...user } = updated;
+    session.user = user;
+    localStorage.setItem("pf_auth_session", JSON.stringify(session));
   },
   async sync(_token: string, _sessions: any[], _templates: any[]) {
     await delay(350); // simulation delay

@@ -4,8 +4,8 @@ import type { Session, User } from "../types";
 import { backend, localPublishIdea, localUnpublishIdea, localIsIdeaPublic, IS_LOCAL_BACKEND } from "../services/backend";
 import { sanitize } from "../utils/sanitize";
 
-export function ShareDialog({ open, onClose, session, user }: {
-  open: boolean; onClose: () => void; session: Session | null; user: User;
+export function ShareDialog({ open, onClose, session, user, token }: {
+  open: boolean; onClose: () => void; session: Session | null; user: User; token: string;
 }) {
   const [isPublic, setIsPublic] = useState(false);
   const [tags, setTags] = useState<string[]>([]);
@@ -26,11 +26,11 @@ export function ShareDialog({ open, onClose, session, user }: {
     try {
       if (!isPublic) {
         if (IS_LOCAL_BACKEND) localPublishIdea(session, user, tags);
-        else { await backend.setIdeaPublic("", session.id, true); }
+        else { await backend.setIdeaPublic(token, session.id, true); }
         setIsPublic(true);
       } else {
         if (IS_LOCAL_BACKEND) localUnpublishIdea(session.id);
-        else { await backend.setIdeaPublic("", session.id, false); }
+        else { await backend.setIdeaPublic(token, session.id, false); }
         setIsPublic(false);
       }
     } finally { setBusy(false); }
@@ -39,8 +39,8 @@ export function ShareDialog({ open, onClose, session, user }: {
   const makeLink = async () => {
     setBusy(true);
     try {
-      const token = await (backend as any).createShareLink("", session.id, { name: session.name, data: session.data, owner: user });
-      const url = `${location.origin}${location.pathname}#/shared/${token}`;
+      const shareToken = await (backend as any).createShareLink(token, session.id, { name: session.name, data: session.data, owner: user });
+      const url = `${location.origin}${location.pathname}#/shared/${shareToken}`;
       setShareUrl(url);
     } finally { setBusy(false); }
   };

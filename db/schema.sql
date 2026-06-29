@@ -11,6 +11,10 @@ create table if not exists users (
   email         text unique not null,
   username      text unique not null,
   password_hash text not null,                      -- bcrypt/scrypt hash
+  display_name  text,
+  avatar_url    text,
+  website_url   text,
+  social_links  jsonb default '[]'::jsonb,
   created_at    timestamptz not null default now()
 );
 

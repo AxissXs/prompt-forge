@@ -18,6 +18,7 @@ const TYPE_ICONS: Record<string, string> = {
 type Props = {
   onUseTemplate: (t: PublicTemplate) => void;
   onUseIdea: (i: PublicIdea) => void;
+  onViewProfile?: (username: string) => void;
 };
 
 function CardSkeleton() {
@@ -34,7 +35,7 @@ function CardSkeleton() {
   );
 }
 
-export function Explore({ onUseTemplate, onUseIdea }: Props) {
+export function Explore({ onUseTemplate, onUseIdea, onViewProfile }: Props) {
   const { user, token } = useAuth();
   const [tab, setTab] = useState<"templates" | "ideas">("templates");
   const [templates, setTemplates] = useState<PublicTemplate[]>([]);
@@ -114,7 +115,11 @@ export function Explore({ onUseTemplate, onUseIdea }: Props) {
                     <span className="w-5 h-5 rounded-full bg-gradient-to-br from-[#b7deff] to-[#ffb8f2] flex items-center justify-center text-[8px] font-[700] text-[#0d2436] shrink-0">
                       {sanitize(t.authorName).slice(0, 1).toUpperCase()}
                     </span>
-                    <span>by {sanitize(t.authorName)}</span>
+                    {onViewProfile ? (
+                      <button onClick={() => onViewProfile(t.authorName)} className="hover:underline text-left">by {sanitize(t.authorName)}</button>
+                    ) : (
+                      <span>by {sanitize(t.authorName)}</span>
+                    )}
                     <span>·</span>
                     <span>{(t.content.length / 1000).toFixed(1)}k chars</span>
                     <span>·</span>
@@ -166,7 +171,11 @@ export function Explore({ onUseTemplate, onUseIdea }: Props) {
                     <span className="w-5 h-5 rounded-full bg-gradient-to-br from-[#b7deff] to-[#ffb8f2] flex items-center justify-center text-[8px] font-[700] text-[#0d2436] shrink-0">
                       {sanitize(i.authorName).slice(0, 1).toUpperCase()}
                     </span>
-                    <span>by {sanitize(i.authorName)}</span>
+                    {onViewProfile ? (
+                      <button onClick={() => onViewProfile(i.authorName)} className="hover:underline text-left">by {sanitize(i.authorName)}</button>
+                    ) : (
+                      <span>by {sanitize(i.authorName)}</span>
+                    )}
                     {i.likes > 0 && <><span>·</span><span>♥ {i.likes}</span></>}
                   </div>
                   <div className="text-[12px] text-[#aebfe0] leading-relaxed line-clamp-3 mb-2">{sanitize(i.oneLiner || "—")}</div>
