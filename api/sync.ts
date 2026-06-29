@@ -1,10 +1,12 @@
 // POST /api/sync — Bulk merges/uploads local templates & ideas into Postgres DB
-import { sql, getUserFromToken, json } from "./_lib";
+import { sql, getUserFromToken, json } from "./_lib.ts";
 
 export default async function handler(req: Request): Promise<Response> {
   if (req.method !== "POST") return json({ error: "method not allowed" }, 405);
 
-  const user = await getUserFromToken(req.headers.get("authorization") ?? undefined);
+  const user = await getUserFromToken(
+    req.headers.get("authorization") ?? undefined,
+  );
   if (!user) return json({ error: "unauthorized" }, 401);
 
   const { sessions, templates } = await req.json().catch(() => ({}));

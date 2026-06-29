@@ -1,6 +1,6 @@
 // GET  /api/explore?kind=templates|ideas      → public listings
 // POST /api/explore  { action, ... }           → publish/unpublish/like
-import { sql, getUserFromToken, json } from "./_lib";
+import { sql, getUserFromToken, json } from "./_lib.ts";
 
 // Uses default Vercel Node.js Serverless runtime (not edge) for full crypto compatibility
 
@@ -27,7 +27,9 @@ export default async function handler(req: Request): Promise<Response> {
   }
 
   if (req.method === "POST") {
-    const user = await getUserFromToken(req.headers.get("authorization") ?? undefined);
+    const user = await getUserFromToken(
+      req.headers.get("authorization") ?? undefined,
+    );
     if (!user) return json({ error: "unauthorized" }, 401);
     const body = await req.json().catch(() => ({}));
     const { action } = body as { action?: string };
@@ -43,7 +45,8 @@ export default async function handler(req: Request): Promise<Response> {
     else if (action === "like") {
       await sql`insert into likes (user_id, item_kind, item_id) values (${user.id}, ${body.kind}, ${body.id})
                 on conflict do nothing`;
-      if (body.kind === "template") await sql`update templates set likes = likes + 1 where id = ${body.id}`;
+      if (body.kind === "template")
+        await sql`update templates set likes = likes + 1 where id = ${body.id}`;
       else await sql`update ideas set likes = likes + 1 where id = ${body.id}`;
     } else return json({ error: "unknown action" }, 400);
 
