@@ -1,7 +1,17 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
-import { executeRecaptcha } from "../../services/recaptcha";
+import { executeRecaptcha, onRecaptchaLoading } from "../../services/recaptcha";
+import { registerSchema, loginSchema } from "../../utils/validation";
+
+function Spinner() {
+  return (
+    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+    </svg>
+  );
+}
 
 export function AuthModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { register, login } = useAuth();
@@ -11,6 +21,11 @@ export function AuthModal({ open, onClose }: { open: boolean; onClose: () => voi
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [recaptchaLoading, setRecaptchaLoading] = useState(false);
+
+  useEffect(() => {
+    return onRecaptchaLoading(setRecaptchaLoading);
+  }, []);
 
   const reset = () => { setError(""); setPassword(""); };
 
@@ -21,7 +36,6 @@ export function AuthModal({ open, onClose }: { open: boolean; onClose: () => voi
     try {
       const localSessions = JSON.parse(localStorage.getItem("promptforge_sessions_v3") || "[]");
       const localTemplates = JSON.parse(localStorage.getItem("promptforge_custom_templates_v1") || "[]");
-      // Filter out empty sessions
       const realSessions = localSessions.filter((s: any) => s.data?.vision?.projectName || s.name !== "Untitled 1");
       return { sessions: realSessions, templates: localTemplates, count: realSessions.length + localTemplates.length };
     } catch {
@@ -30,22 +44,38 @@ export function AuthModal({ open, onClose }: { open: boolean; onClose: () => voi
   };
 
   const submit = async () => {
-    setError(""); setBusy(true);
+    setError("");
+    const trimmedEmail = email.trim();
+    const trimmedUsername = username.trim();
+
+    if (mode === "register") {
+      const result = registerSchema.safeParse({ email: trimmedEmail, username: trimmedUsername, password });
+      if (!result.success) {
+        setError(result.error.issues[0]?.message || "Invalid input");
+        return;
+      }
+    } else {
+      const result = loginSchema.safeParse({ email: trimmedEmail, password });
+      if (!result.success) {
+        setError(result.error.issues[0]?.message || "Invalid input");
+        return;
+      }
+    }
+
+    setBusy(true);
     try {
       const action = mode === "register" ? "register" : "login";
       const token = await executeRecaptcha(action);
-      
-      // Perform authentication
+
       if (mode === "register") {
-        await register(email.trim(), username.trim(), password, token);
+        await register(trimmedEmail, trimmedUsername, password, token);
       } else {
-        await login(email.trim(), password, token);
+        await login(trimmedEmail, password, token);
       }
-      
-      // Check for local storage data to merge
+
       const { count } = getLocalDataCount();
       const currentSession = JSON.parse(localStorage.getItem("pf_auth_session") || "null");
-      
+
       if (count > 0 && currentSession?.token) {
         setSessionToken(currentSession.token);
         setStep("merge");
@@ -79,6 +109,22 @@ export function AuthModal({ open, onClose }: { open: boolean; onClose: () => voi
     }
   };
 
+  const buttonContent = () => {
+    if (busy) {
+      if (recaptchaLoading) return (
+        <span className="flex items-center justify-center gap-2">
+          <Spinner /> Loading reCAPTCHA…
+        </span>
+      );
+      return (
+        <span className="flex items-center justify-center gap-2">
+          <Spinner /> {mode === "login" ? "Signing in…" : "Creating account…"}
+        </span>
+      );
+    }
+    return mode === "login" ? "Sign in" : "Create account";
+  };
+
   return (
     <AnimatePresence>
       {open && (
@@ -95,7 +141,6 @@ export function AuthModal({ open, onClose }: { open: boolean; onClose: () => voi
             <AnimatePresence mode="wait">
               {step === "auth" ? (
                 <motion.div key="auth" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-                  {/* Header */}
                   <div className="px-6 pt-6 pb-4">
                     <div className="flex items-center gap-3 mb-1">
                       <div className="w-9 h-9 rounded-[12px] bg-gradient-to-br from-[#b7deff] to-[#ffb8f2] opacity-90" />
@@ -106,7 +151,6 @@ export function AuthModal({ open, onClose }: { open: boolean; onClose: () => voi
                     </div>
                   </div>
 
-                  {/* Tabs */}
                   <div className="px-6">
                     <div className="flex glass-soft rounded-full p-[4px]">
                       {(["login", "register"] as const).map((m) => (
@@ -118,7 +162,6 @@ export function AuthModal({ open, onClose }: { open: boolean; onClose: () => voi
                     </div>
                   </div>
 
-                  {/* Form */}
                   <div className="px-6 py-5 space-y-3">
                     <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" placeholder="Email"
                       className="w-full rounded-[12px] glass-soft px-4 py-[11px] text-[14px] outline-none text-[#eaf2ff] placeholder-[#8d9ec3] focus:ring-sky" />
@@ -133,11 +176,11 @@ export function AuthModal({ open, onClose }: { open: boolean; onClose: () => voi
                       onKeyDown={(e) => { if (e.key === "Enter") submit(); }}
                       className="w-full rounded-[12px] glass-soft px-4 py-[11px] text-[14px] outline-none text-[#eaf2ff] placeholder-[#8d9ec3] focus:ring-sky" />
 
-                    {error && <div className="text-[12.5px] text-[#ff9ba0] bg-red-500/10 rounded-[10px] px-3 py-2">{error}</div>}
+                    {error && <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="text-[12.5px] text-[#ff9ba0] bg-red-500/10 rounded-[10px] px-3 py-2">{error}</motion.div>}
 
                     <button onClick={submit} disabled={busy || !email || !password || (mode === "register" && !username)}
                       className="w-full px-5 py-[12px] rounded-[14px] bg-gradient-to-r from-[#bde3ff] to-[#ffd8f7] text-[#142132] text-[14px] font-[650] disabled:opacity-40 hover:translate-y-[-1px] transition">
-                      {busy ? "Please wait…" : mode === "login" ? "Sign in" : "Create account"}
+                      {buttonContent()}
                     </button>
                   </div>
                 </motion.div>
@@ -153,12 +196,12 @@ export function AuthModal({ open, onClose }: { open: boolean; onClose: () => voi
                     </div>
                   </div>
 
-                  {error && <div className="text-[12.5px] text-[#ff9ba0] bg-red-500/10 rounded-[10px] px-3 py-2">{error}</div>}
+                  {error && <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="text-[12.5px] text-[#ff9ba0] bg-red-500/10 rounded-[10px] px-3 py-2">{error}</motion.div>}
 
                   <div className="flex gap-2 pt-2">
-                    <button onClick={() => handleMerge(false)} disabled={busy} className="flex-1 px-4 py-[11px] rounded-[12px] glass-soft text-[13px] font-[600]">Keep separate</button>
+                    <button onClick={() => handleMerge(false)} disabled={busy} className="flex-1 px-4 py-[11px] rounded-[12px] glass-soft text-[13px] font-[600]">{busy ? <span className="flex items-center justify-center gap-2"><Spinner /> Syncing…</span> : "Keep separate"}</button>
                     <button onClick={() => handleMerge(true)} disabled={busy} className="flex-1 px-4 py-[11px] rounded-[12px] bg-gradient-to-r from-[#bde3ff] to-[#ffd8f7] text-[#142132] text-[13px] font-[650]">
-                      {busy ? "Syncing…" : "Yes, merge data"}
+                      {busy ? <span className="flex items-center justify-center gap-2"><Spinner /> Syncing…</span> : "Yes, merge data"}
                     </button>
                   </div>
                 </motion.div>

@@ -5,15 +5,34 @@ import { backend } from "../services/backend";
 import { useAuth } from "../context/AuthContext";
 import { classNames } from "../utils/classNames";
 import { GlassPanel } from "./ui/GlassPanel";
+import { sanitize } from "../utils/sanitize";
 
 const TYPE_LABELS: Record<string, string> = {
   webapp: "Web App", saas: "SaaS", mobile: "Mobile", api: "API", extension: "Extension", "ai-agent": "AI Agent",
+};
+
+const TYPE_ICONS: Record<string, string> = {
+  webapp: "🌐", saas: "☁️", mobile: "📱", api: "🔌", extension: "🧩", "ai-agent": "🤖",
 };
 
 type Props = {
   onUseTemplate: (t: PublicTemplate) => void;
   onUseIdea: (i: PublicIdea) => void;
 };
+
+function CardSkeleton() {
+  return (
+    <div className="rounded-[18px] glass-soft p-4 animate-pulse space-y-3">
+      <div className="h-4 bg-white/[.06] rounded-full w-2/3" />
+      <div className="h-3 bg-white/[.04] rounded-full w-1/3" />
+      <div className="h-20 bg-white/[.04] rounded-[10px]" />
+      <div className="flex gap-2 pt-2">
+        <div className="h-7 bg-white/[.04] rounded-full w-16" />
+        <div className="h-7 bg-white/[.04] rounded-full w-20" />
+      </div>
+    </div>
+  );
+}
 
 export function Explore({ onUseTemplate, onUseIdea }: Props) {
   const { user, token } = useAuth();
@@ -44,7 +63,7 @@ export function Explore({ onUseTemplate, onUseIdea }: Props) {
   const fI = ideas.filter((i) => !q || i.projectName.toLowerCase().includes(q) || i.oneLiner.toLowerCase().includes(q) || i.authorName.toLowerCase().includes(q) || i.tags.some((x) => x.toLowerCase().includes(q)));
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
@@ -69,34 +88,57 @@ export function Explore({ onUseTemplate, onUseIdea }: Props) {
       </div>
 
       {loading ? (
-        <GlassPanel className="p-16 text-center text-[#8ea5cf]">Loading community content…</GlassPanel>
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => <CardSkeleton key={i} />)}
+        </div>
       ) : tab === "templates" ? (
         fT.length === 0 ? (
           <GlassPanel className="p-16 text-center">
+            <div className="text-[32px] mb-3 opacity-40">📝</div>
             <div className="text-[15px] font-[600] mb-1">No public templates yet</div>
             <div className="text-[13px] text-[#8ea5cf]">Publish one from the Prompt Studio to share it here.</div>
           </GlassPanel>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {fT.map((t) => (
-              <motion.div key={t.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
-                <GlassPanel className="p-4 h-full flex flex-col">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="text-[14px] font-[700] leading-snug">{t.name}</div>
+            {fT.map((t, idx) => (
+              <motion.div key={t.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.03 }}>
+                <div className="group rounded-[18px] glass-soft p-4 h-full flex flex-col border border-transparent hover:border-[#aac6ff33] hover:shadow-[0_0_32px_rgba(100,180,255,.08)] transition-all duration-300">
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="text-[18px] shrink-0">{TYPE_ICONS[t.projectType] || "📄"}</span>
+                      <div className="text-[14px] font-[700] leading-snug truncate">{sanitize(t.name)}</div>
+                    </div>
                     <span className="text-[9px] px-[6px] py-[2px] rounded-full glass-soft text-[#a5c4e8] shrink-0">{TYPE_LABELS[t.projectType] || t.projectType}</span>
                   </div>
-                  <div className="text-[11px] text-[#8ea5cf] mt-1">by {t.authorName} · {(t.content.length / 1000).toFixed(1)}k chars</div>
-                  <pre className="mt-3 text-[10.5px] mono text-[#9fb6d8] leading-relaxed bg-[#0a101c]/50 rounded-[10px] p-3 h-[110px] overflow-hidden whitespace-pre-wrap">{t.content.slice(0, 360)}</pre>
+                  <div className="flex items-center gap-2 text-[11px] text-[#8ea5cf] mb-3">
+                    <span className="w-5 h-5 rounded-full bg-gradient-to-br from-[#b7deff] to-[#ffb8f2] flex items-center justify-center text-[8px] font-[700] text-[#0d2436] shrink-0">
+                      {sanitize(t.authorName).slice(0, 1).toUpperCase()}
+                    </span>
+                    <span>by {sanitize(t.authorName)}</span>
+                    <span>·</span>
+                    <span>{(t.content.length / 1000).toFixed(1)}k chars</span>
+                    <span>·</span>
+                    <span>♥ {t.likes}</span>
+                  </div>
+                  <div className="relative flex-1">
+                    <pre className="text-[10.5px] mono text-[#9fb6d8] leading-relaxed bg-[#0a101c]/50 rounded-[12px] p-3 h-[110px] overflow-hidden whitespace-pre-wrap">{sanitize(t.content.slice(0, 360))}</pre>
+                    <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-[#0a101c]/80 to-transparent rounded-b-[12px]" />
+                  </div>
                   <div className="flex items-center gap-2 mt-3 pt-3 border-t border-white/[.07]">
                     <button onClick={() => like("template", t.id)} disabled={!user || liked.has(t.id)}
-                      className={classNames("px-3 py-[6px] rounded-full text-[11.5px] glass-soft transition", liked.has(t.id) ? "text-[#ff9dec]" : "text-[#cfe3ff] hover:bg-white/[.06]", !user && "opacity-50")}>
-                      ♥ {t.likes}
+                      className={classNames(
+                        "px-3 py-[6px] rounded-full text-[11.5px] glass-soft transition flex items-center gap-1.5",
+                        liked.has(t.id) ? "text-[#ff9dec] bg-[#ff9dec]/10" : "text-[#cfe3ff] hover:bg-white/[.06]",
+                        !user && "opacity-50",
+                      )}>
+                      <span className={classNames("transition", liked.has(t.id) ? "scale-110" : "")}>♥</span>
+                      {t.likes}
                     </button>
                     <div className="flex-1" />
-                    <button onClick={() => onUseTemplate(t)}
-                      className="px-4 py-[6px] rounded-full bg-[#cffff8] text-[#06271f] text-[11.5px] font-[600] hover:translate-y-[-1px] transition">Use template</button>
+                    <motion.button onClick={() => onUseTemplate(t)} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+                      className="px-4 py-[6px] rounded-full bg-[#cffff8] text-[#06271f] text-[11.5px] font-[600] hover:shadow-[0_0_20px_rgba(100,255,220,.2)] transition">Use template</motion.button>
                   </div>
-                </GlassPanel>
+                </div>
               </motion.div>
             ))}
           </div>
@@ -104,35 +146,56 @@ export function Explore({ onUseTemplate, onUseIdea }: Props) {
       ) : (
         fI.length === 0 ? (
           <GlassPanel className="p-16 text-center">
+            <div className="text-[32px] mb-3 opacity-40">💡</div>
             <div className="text-[15px] font-[600] mb-1">No public ideas yet</div>
             <div className="text-[13px] text-[#8ea5cf]">Make an idea public from the Idea Builder to feature it here.</div>
           </GlassPanel>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {fI.map((i) => (
-              <motion.div key={i.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
-                <GlassPanel className="p-4 h-full flex flex-col">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="text-[15px] font-[700] leading-snug">{i.projectName || i.name || "Untitled idea"}</div>
+            {fI.map((i, idx) => (
+              <motion.div key={i.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.03 }}>
+                <div className="group rounded-[18px] glass-soft p-4 h-full flex flex-col border border-transparent hover:border-[#aac6ff33] hover:shadow-[0_0_32px_rgba(100,180,255,.08)] transition-all duration-300">
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="text-[18px] shrink-0">{TYPE_ICONS[i.projectType] || "💡"}</span>
+                      <div className="text-[15px] font-[700] leading-snug truncate">{sanitize(i.projectName || i.name || "Untitled idea")}</div>
+                    </div>
                     <span className="text-[9px] px-[6px] py-[2px] rounded-full glass-soft text-[#a5c4e8] shrink-0">{TYPE_LABELS[i.projectType] || i.projectType}</span>
                   </div>
-                  <div className="text-[12px] text-[#aebfe0] mt-1 leading-relaxed line-clamp-3">{i.oneLiner || "—"}</div>
+                  <div className="flex items-center gap-2 text-[11px] text-[#8ea5cf] mb-2">
+                    <span className="w-5 h-5 rounded-full bg-gradient-to-br from-[#b7deff] to-[#ffb8f2] flex items-center justify-center text-[8px] font-[700] text-[#0d2436] shrink-0">
+                      {sanitize(i.authorName).slice(0, 1).toUpperCase()}
+                    </span>
+                    <span>by {sanitize(i.authorName)}</span>
+                    {i.likes > 0 && <><span>·</span><span>♥ {i.likes}</span></>}
+                  </div>
+                  <div className="text-[12px] text-[#aebfe0] leading-relaxed line-clamp-3 mb-2">{sanitize(i.oneLiner || "—")}</div>
                   {i.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mt-2">
-                      {i.tags.slice(0, 4).map((tg) => <span key={tg} className="text-[10px] px-[7px] py-[2px] rounded-full glass-soft text-[#9db6df]">{tg}</span>)}
+                    <div className="flex flex-wrap gap-1.5 mb-2">
+                      {i.tags.slice(0, 4).map((tg) => (
+                        <span key={tg} className="text-[10px] px-[7px] py-[2px] rounded-full glass-soft text-[#9db6df] border border-white/[.06]">{sanitize(tg)}</span>
+                      ))}
+                      {i.tags.length > 4 && (
+                        <span className="text-[10px] px-[7px] py-[2px] rounded-full glass-soft text-[#6d84aa]">+{i.tags.length - 4}</span>
+                      )}
                     </div>
                   )}
-                  <div className="text-[11px] text-[#8ea5cf] mt-2">by {i.authorName}</div>
-                  <div className="flex items-center gap-2 mt-3 pt-3 border-t border-white/[.07]">
+                  <div className="flex-1" />
+                  <div className="flex items-center gap-2 pt-3 border-t border-white/[.07]">
                     <button onClick={() => like("idea", i.id)} disabled={!user || liked.has(i.id)}
-                      className={classNames("px-3 py-[6px] rounded-full text-[11.5px] glass-soft transition", liked.has(i.id) ? "text-[#ff9dec]" : "text-[#cfe3ff] hover:bg-white/[.06]", !user && "opacity-50")}>
-                      ♥ {i.likes}
+                      className={classNames(
+                        "px-3 py-[6px] rounded-full text-[11.5px] glass-soft transition flex items-center gap-1.5",
+                        liked.has(i.id) ? "text-[#ff9dec] bg-[#ff9dec]/10" : "text-[#cfe3ff] hover:bg-white/[.06]",
+                        !user && "opacity-50",
+                      )}>
+                      <span className={classNames("transition", liked.has(i.id) ? "scale-110" : "")}>♥</span>
+                      {i.likes}
                     </button>
                     <div className="flex-1" />
-                    <button onClick={() => onUseIdea(i)}
-                      className="px-4 py-[6px] rounded-full bg-[#cffff8] text-[#06271f] text-[11.5px] font-[600] hover:translate-y-[-1px] transition">Clone idea</button>
+                    <motion.button onClick={() => onUseIdea(i)} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+                      className="px-4 py-[6px] rounded-full bg-[#cffff8] text-[#06271f] text-[11.5px] font-[600] hover:shadow-[0_0_20px_rgba(100,255,220,.2)] transition">Clone idea</motion.button>
                   </div>
-                </GlassPanel>
+                </div>
               </motion.div>
             ))}
           </div>

@@ -3,6 +3,7 @@ import type {
   PublicTemplate, PublicIdea,
 } from "../types";
 import { uid } from "../utils/uid";
+import { sanitize } from "../utils/sanitize";
 
 /**
  * Backend abstraction.
@@ -84,6 +85,19 @@ const write = (k: string, v: unknown) => localStorage.setItem(k, JSON.stringify(
 const hash = (s: string) => { let h = 0; for (let i = 0; i < s.length; i++) { h = (h << 5) - h + s.charCodeAt(i); h |= 0; } return String(h); };
 const delay = (ms = 280) => new Promise((r) => setTimeout(r, ms));
 
+function sanitizeStrings<T>(obj: T): T {
+  if (typeof obj === "string") return sanitize(obj) as T;
+  if (Array.isArray(obj)) return obj.map(sanitizeStrings) as T;
+  if (obj && typeof obj === "object") {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(obj)) {
+      out[k] = sanitizeStrings(v);
+    }
+    return out as T;
+  }
+  return obj;
+}
+
 const local = {
   async register(email: string, username: string, password: string, recaptchaToken: string): Promise<AuthSession> {
     await delay();
@@ -108,11 +122,11 @@ const local = {
   async logout() { /* no-op locally */ },
   async listPublicTemplates(): Promise<PublicTemplate[]> {
     await delay(120);
-    return read<PublicTemplate[]>(LS.pubT, []).sort((a, b) => b.likes - a.likes || b.publishedAt - a.publishedAt);
+    return read<PublicTemplate[]>(LS.pubT, []).sort((a, b) => b.likes - a.likes || b.publishedAt - a.publishedAt).map((t) => sanitizeStrings(t));
   },
   async listPublicIdeas(): Promise<PublicIdea[]> {
     await delay(120);
-    return read<PublicIdea[]>(LS.pubI, []).sort((a, b) => b.publishedAt - a.publishedAt);
+    return read<PublicIdea[]>(LS.pubI, []).sort((a, b) => b.publishedAt - a.publishedAt).map((i) => sanitizeStrings(i));
   },
   async setTemplatePublic(_t: string, _id: string, _pub: boolean) { /* handled by publishTemplate */ },
   async setIdeaPublic(_t: string, _id: string, _pub: boolean) { /* handled by publishIdea */ },
@@ -135,7 +149,8 @@ const local = {
   async resolveShare(token: string) {
     await delay(120);
     const shares = read<Record<string, any>>(LS.shares, {});
-    return shares[token] ?? null;
+    const item = shares[token] ?? null;
+    return item ? sanitizeStrings(item) : null;
   },
   async sync(_token: string, _sessions: any[], _templates: any[]) {
     await delay(350); // simulation delay

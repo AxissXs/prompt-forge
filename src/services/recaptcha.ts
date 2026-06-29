@@ -6,18 +6,36 @@ export const RECAPTCHA_SITE_KEY =
   "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"; // Google test key
 
 let loadPromise: Promise<void> | null = null;
+let _loading = false;
+let _listeners: Array<(v: boolean) => void> = [];
+
+export function onRecaptchaLoading(cb: (loading: boolean) => void) {
+  _listeners.push(cb);
+  cb(_loading);
+  return () => { _listeners = _listeners.filter((l) => l !== cb); };
+}
+
+function setLoading(v: boolean) {
+  _loading = v;
+  for (const l of _listeners) l(v);
+}
+
+export function isLoading(): boolean {
+  return _loading;
+}
 
 export function loadRecaptcha(): Promise<void> {
   if (typeof window === "undefined") return Promise.resolve();
   if ((window as any).grecaptcha) return Promise.resolve();
   if (loadPromise) return loadPromise;
+  setLoading(true);
   loadPromise = new Promise<void>((resolve, reject) => {
     const s = document.createElement("script");
     s.src = `https://www.google.com/recaptcha/api.js?render=${RECAPTCHA_SITE_KEY}`;
     s.async = true;
     s.defer = true;
-    s.onload = () => resolve();
-    s.onerror = () => reject(new Error("Failed to load reCAPTCHA"));
+    s.onload = () => { setLoading(false); resolve(); };
+    s.onerror = () => { setLoading(false); reject(new Error("Failed to load reCAPTCHA")); };
     document.head.appendChild(s);
   });
   return loadPromise;

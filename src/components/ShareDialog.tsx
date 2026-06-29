@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Session, User } from "../types";
 import { backend, localPublishIdea, localUnpublishIdea, localIsIdeaPublic, IS_LOCAL_BACKEND } from "../services/backend";
+import { sanitize } from "../utils/sanitize";
 
 export function ShareDialog({ open, onClose, session, user }: {
   open: boolean; onClose: () => void; session: Session | null; user: User;
@@ -46,7 +47,7 @@ export function ShareDialog({ open, onClose, session, user }: {
 
   const copy = async () => { await navigator.clipboard.writeText(shareUrl); setCopied(true); setTimeout(() => setCopied(false), 1600); };
 
-  const addTag = () => { const t = tagInput.trim(); if (t && !tags.includes(t)) setTags([...tags, t]); setTagInput(""); };
+  const addTag = () => { const t = sanitize(tagInput.trim()); if (t && !tags.includes(t)) setTags([...tags, t]); setTagInput(""); };
 
   return (
     <AnimatePresence>

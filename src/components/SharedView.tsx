@@ -5,6 +5,7 @@ import { backend } from "../services/backend";
 import { buildPrompt } from "../utils/buildPrompt";
 import { DEFAULT_TEMPLATES } from "../constants/templates";
 import { GlassPanel } from "./ui/GlassPanel";
+import { sanitize } from "../utils/sanitize";
 
 type Shared = { name: string; data: FormData; owner_name: string } | null;
 
@@ -45,12 +46,12 @@ export function SharedView({ token, onClose, onClone }: {
         ) : (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
             <GlassPanel className="p-6">
-              <div className="text-[26px] font-[700] glow-text">{item.data.vision.projectName || item.name}</div>
-              <div className="text-[14px] text-[#aebfe0] mt-1">{item.data.vision.oneLiner}</div>
-              <div className="text-[12px] text-[#8ea5cf] mt-2">Shared by {item.owner_name}</div>
+              <div className="text-[26px] font-[700] glow-text">{sanitize(item.data.vision.projectName || item.name)}</div>
+              <div className="text-[14px] text-[#aebfe0] mt-1">{sanitize(item.data.vision.oneLiner)}</div>
+              <div className="text-[12px] text-[#8ea5cf] mt-2">Shared by {sanitize(item.owner_name)}</div>
               <div className="flex flex-wrap gap-2 mt-4">
-                <span className="text-[11px] px-[9px] py-[4px] rounded-full glass-soft text-[#b9d4ff]">{item.data.vision.projectType}</span>
-                {item.data.vision.platformTarget.map((p) => <span key={p} className="text-[11px] px-[9px] py-[4px] rounded-full glass-soft text-[#b9d4ff]">{p}</span>)}
+                <span className="text-[11px] px-[9px] py-[4px] rounded-full glass-soft text-[#b9d4ff]">{sanitize(item.data.vision.projectType)}</span>
+                {item.data.vision.platformTarget.map((p) => <span key={p} className="text-[11px] px-[9px] py-[4px] rounded-full glass-soft text-[#b9d4ff]">{sanitize(p)}</span>)}
               </div>
               <div className="flex gap-2 mt-5">
                 <button onClick={() => onClone(item.name, item.data)} className="px-5 py-[10px] rounded-full bg-[#cffff8] text-[#06271f] text-[13px] font-[650] hover:translate-y-[-1px] transition">Clone to my sessions</button>
