@@ -1,6 +1,6 @@
 // POST /api/share  { ideaId }            → create private share link
 // GET  /api/share?token=...               → resolve a shared idea
-import { sql, getUserFromToken, newToken, json } from "./_lib.js";
+import { sql, getUserFromToken, newToken, json, getBody } from "./_lib.js";
 
 // Uses default Vercel Node.js Serverless runtime (not edge) for full crypto compatibility
 
@@ -23,7 +23,7 @@ export default async function handler(req: Request): Promise<Response> {
       req.headers.get("authorization") ?? undefined,
     );
     if (!user) return json({ error: "unauthorized" }, 401);
-    const { ideaId } = await req.json().catch(() => ({}));
+    const { ideaId } = await getBody(req);
     const owned =
       await sql`select 1 from ideas where id = ${ideaId} and user_id = ${user.id} limit 1`;
     if (!owned.length) return json({ error: "not found" }, 404);

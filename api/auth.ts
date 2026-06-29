@@ -7,6 +7,7 @@ import {
   verifyRecaptcha,
   getUserFromToken,
   json,
+  getBody,
 } from "./_lib.js";
 
 // Uses default Vercel Node.js Serverless runtime (not edge) for full crypto compatibility
@@ -20,7 +21,7 @@ export default async function handler(req: Request): Promise<Response> {
   }
   if (req.method !== "POST") return json({ error: "method not allowed" }, 405);
 
-  const body = await req.json().catch(() => ({}));
+  const body = await getBody(req);
   const { action } = body as { action?: string };
 
   if (action === "register") {

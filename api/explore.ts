@@ -1,6 +1,6 @@
 // GET  /api/explore?kind=templates|ideas      → public listings
 // POST /api/explore  { action, ... }           → publish/unpublish/like
-import { sql, getUserFromToken, json } from "./_lib.js";
+import { sql, getUserFromToken, json, getBody } from "./_lib.js";
 
 // Uses default Vercel Node.js Serverless runtime (not edge) for full crypto compatibility
 
@@ -31,7 +31,7 @@ export default async function handler(req: Request): Promise<Response> {
       req.headers.get("authorization") ?? undefined,
     );
     if (!user) return json({ error: "unauthorized" }, 401);
-    const body = await req.json().catch(() => ({}));
+    const body = await getBody(req);
     const { action } = body as { action?: string };
 
     if (action === "publishTemplate")

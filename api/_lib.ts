@@ -64,6 +64,29 @@ export async function getUserFromToken(authHeader?: string) {
   return rows[0] ?? null;
 }
 
+// ── Cross-runtime body parser ──
+// Works with Web API Request (Edge, Cloudflare) and Node.js IncomingMessage (Vercel Node)
+export async function getBody(req: Request): Promise<Record<string, unknown>> {
+  if (typeof req.json === "function") {
+    try {
+      return (await req.json()) as Record<string, unknown>;
+    } catch {
+      return {};
+    }
+  }
+  // Vercel Node.js runtime stores pre-parsed body
+  if ((req as any).body) return (req as any).body as Record<string, unknown>;
+  // Fallback: read from the stream (IncomingMessage)
+  const chunks: Buffer[] = [];
+  for await (const chunk of req as any) chunks.push(Buffer.from(chunk));
+  const text = Buffer.concat(chunks).toString("utf-8");
+  try {
+    return text ? (JSON.parse(text) as Record<string, unknown>) : {};
+  } catch {
+    return {};
+  }
+}
+
 export function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
