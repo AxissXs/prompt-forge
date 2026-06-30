@@ -50,14 +50,14 @@ const remote = {
   async setTemplatePublic(token: string, id: string, pub: boolean) {
     await fetch(`${API_BASE}/explore`, { method: "POST", headers: { "content-type": "application/json", ...authHeaders(token) }, body: JSON.stringify({ action: pub ? "publishTemplate" : "unpublishTemplate", id }) });
   },
-  async setIdeaPublic(token: string, id: string, pub: boolean) {
-    await fetch(`${API_BASE}/explore`, { method: "POST", headers: { "content-type": "application/json", ...authHeaders(token) }, body: JSON.stringify({ action: pub ? "publishIdea" : "unpublishIdea", id }) });
+  async setIdeaPublic(token: string, _id: string, pub: boolean, payload?: { name: string; data: FormData }) {
+    await fetch(`${API_BASE}/explore`, { method: "POST", headers: { "content-type": "application/json", ...authHeaders(token) }, body: JSON.stringify({ action: pub ? "publishIdea" : "unpublishIdea", name: payload?.name, data: payload?.data }) });
   },
   async like(token: string, kind: "template" | "idea", id: string) {
     await fetch(`${API_BASE}/explore`, { method: "POST", headers: { "content-type": "application/json", ...authHeaders(token) }, body: JSON.stringify({ action: "like", kind, id }) });
   },
-  async createShareLink(token: string, ideaId: string) {
-    const r = await fetch(`${API_BASE}/share`, { method: "POST", headers: { "content-type": "application/json", ...authHeaders(token) }, body: JSON.stringify({ ideaId }) });
+  async createShareLink(token: string, _ideaId: string, payload?: { name: string; data: FormData }) {
+    const r = await fetch(`${API_BASE}/share`, { method: "POST", headers: { "content-type": "application/json", ...authHeaders(token) }, body: JSON.stringify({ name: payload?.name, data: payload?.data }) });
     return (await r.json()).token as string;
   },
   async resolveShare(token: string) {

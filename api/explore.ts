@@ -2,8 +2,6 @@
 // POST /api/explore  { action, ... }           → publish/unpublish/like
 import { sql, getUserFromToken, json, getBody } from "./_lib.js";
 
-// Uses default Vercel Node.js Serverless runtime (not edge) for full crypto compatibility
-
 export async function fetch(req: Request): Promise<Response> {
   const url = new URL(req.url);
 
@@ -39,10 +37,20 @@ export async function fetch(req: Request): Promise<Response> {
     else if (action === "unpublishTemplate")
       await sql`update templates set is_public = false where id = ${body.id} and user_id = ${user.id}`;
     else if (action === "publishIdea")
-      await sql`update ideas set is_public = true where id = ${body.id} and user_id = ${user.id}`;
+      // Client-side IDs (uid()) are not valid PG UUIDs — always insert a new row
+      await sql`
+        insert into ideas (user_id, name, data, is_public)
+        values (${user.id}, ${body.name ?? "Untitled"}, ${body.data ? JSON.stringify(body.data) : "{}"}, true)`;
     else if (action === "unpublishIdea")
-      await sql`update ideas set is_public = false where id = ${body.id} and user_id = ${user.id}`;
+      await sql`
+        update ideas set is_public = false
+        where id = (
+          select id from ideas
+          where user_id = ${user.id} and name = ${body.name ?? "Untitled"} and is_public = true
+          order by updated_at desc limit 1
+        )`;
     else if (action === "like") {
+      // Likes use DB-generated UUIDs from GET results — safe to query by id
       await sql`insert into likes (user_id, item_kind, item_id) values (${user.id}, ${body.kind}, ${body.id})
                 on conflict do nothing`;
       if (body.kind === "template")

@@ -26,11 +26,11 @@ export function ShareDialog({ open, onClose, session, user, token }: {
     try {
       if (!isPublic) {
         if (IS_LOCAL_BACKEND) localPublishIdea(session, user, tags);
-        else { await backend.setIdeaPublic(token, session.id, true); }
+        else { await backend.setIdeaPublic(token, session.id, true, { name: session.name, data: session.data }); }
         setIsPublic(true);
       } else {
         if (IS_LOCAL_BACKEND) localUnpublishIdea(session.id);
-        else { await backend.setIdeaPublic(token, session.id, false); }
+        else { await backend.setIdeaPublic(token, session.id, false, { name: session.name, data: session.data }); }
         setIsPublic(false);
       }
     } finally { setBusy(false); }
